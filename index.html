@@ -1,0 +1,162 @@
+ Wrote ~/Projects/My/Backend/google-idtoken-tester/index.html
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Genera y decodifica idTokens de Google Identity Services para probar flujos de login con Google." />
+<meta name="color-scheme" content="light dark" />
+<title>Google ID Token Tester</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234285f4'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='26' font-weight='bold' fill='white' text-anchor='middle'%3EID%3C/text%3E%3C/svg%3E" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="logo" aria-hidden="true">ID</div>
+      <div>
+        <p class="eyebrow">Google Identity Services</p>
+        <h1>Google ID Token Tester</h1>
+        <p class="lede">
+          Genera y decodifica un <code>idToken</code> de Google sin backend.
+          Úsalo para probar login con Google, APIs que reciben <code>idToken</code>
+          o tus propios guards.
+        </p>
+      </div>
+    </header>
+
+    <main>
+      <section class="card" aria-labelledby="client-title">
+        <div class="card-head">
+          <h2 id="client-title">1. Configura tu Client ID</h2>
+          <span class="pill">OAuth Web client</span>
+        </div>
+        <form id="client-form" novalidate>
+          <label for="client-id">Google OAuth 2.0 Client ID</label>
+          <div class="row">
+            <input
+              id="client-id"
+              name="client_id"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="1234567890-xxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+              aria-describedby="client-help"
+            />
+            <button type="submit" class="btn-primary">Guardar y cargar</button>
+          </div>
+          <p id="client-help" class="hint">
+            Se guarda solo en <code>localStorage</code> de tu navegador.
+            También puedes abrir la página con <code>?client_id=...</code>.
+          </p>
+          <div id="client-error" class="alert bad" hidden></div>
+        </form>
+      </section>
+
+      <section id="signin-card" class="card" aria-labelledby="signin-title" hidden>
+        <div class="card-head">
+          <h2 id="signin-title">2. Inicia sesión con Google</h2>
+          <span id="aud-pill" class="pill"></span>
+        </div>
+        <p class="origin-line">
+          Origen actual: <code id="origin"></code>
+          <button id="copy-origin" type="button" class="btn-ghost btn-small">Copiar</button>
+        </p>
+        <p class="hint">
+          Este origen debe estar en <strong>Authorized JavaScript origins</strong>
+          del Client ID. Sin slash final.
+        </p>
+        <div id="gsi-button" class="gsi-slot"></div>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+        <button id="reset" type="button" class="btn-ghost btn-small">Usar otro Client ID</button>
+      </section>
+
+      <section id="token-card" class="card" aria-labelledby="token-title" hidden>
+        <div class="card-head">
+          <h2 id="token-title">3. Tu idToken</h2>
+          <span id="expiry" class="pill"></span>
+        </div>
+        <textarea id="token" readonly spellcheck="false" aria-label="idToken generado"></textarea>
+        <div class="actions">
+          <button id="copy-token" type="button" class="btn-primary">Copiar idToken</button>
+          <button id="download-token" type="button" class="btn-ghost">Descargar .txt</button>
+        </div>
+        <p class="hint">El token se queda en tu navegador. No se envía a ningún servidor.</p>
+      </section>
+
+      <section id="claims-card" class="card" aria-labelledby="claims-title" hidden>
+        <div class="card-head">
+          <h2 id="claims-title">Claims del token</h2>
+          <span class="pill">JWT decodificado</span>
+        </div>
+        <div id="claims" class="claims"></div>
+        <details>
+          <summary>Ver JSON completo</summary>
+          <pre><code id="raw-claims"></code></pre>
+        </details>
+      </section>
+
+      <div class="split">
+        <section class="card" aria-labelledby="use-title">
+          <h2 id="use-title">Cómo usarlo</h2>
+          <ol>
+            <li>Obtén el <code>idToken</code> con el botón de Google.</li>
+            <li>Envíalo a tu backend en <code>POST /auth/google</code>.</li>
+            <li>Usa el <code>accessToken</code> que devuelva tu API.</li>
+          </ol>
+          <pre><code>curl -X POST http://localhost:3000/auth/google \
+  -H 'Content-Type: application/json' \
+  -d '{"idToken":"PEGA_EL_TOKEN"}'</code></pre>
+          <p class="hint">
+            Cambia la URL por la de tu API. Este proyecto no incluye backend.
+          </p>
+        </section>
+
+        <section class="card" aria-labelledby="origin-title">
+          <h2 id="origin-title">Origen autorizado</h2>
+          <ul class="checklist">
+            <li>Abre Google Cloud Console → Credentials.</li>
+            <li>Edita tu OAuth Client ID de tipo Web.</li>
+            <li>Agrega el origen actual en Authorized JavaScript origins.</li>
+            <li>Espera 1–2 minutos y recarga.</li>
+          </ul>
+          <p class="origin-line">
+            <code id="origin-2"></code>
+            <button id="copy-origin-2" type="button" class="btn-ghost btn-small">Copiar</button>
+          </p>
+          <p>
+            <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer noopener">
+              Abrir Google Cloud Console
+            </a>
+          </p>
+        </section>
+      </div>
+
+      <script src="https://accounts.google.com/gsi/client" defer></script>
+      <script src="script.js" defer></script>
+</body>
+</html>
+      <section id="file-warning" class="card" hidden>
+        <div class="alert bad">
+          Abriste la página con <code>file://</code>. Google no permite ese origen.
+          Sírvela con un servidor local, por ejemplo:
+          <code>python3 -m http.server 5500</code>, y abre
+          <code>http://localhost:5500</code>.
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Google ID Token Tester
+      <span class="footer-dot">·</span>
+      Sin backend, sin tracking
+      <span class="footer-dot">·</span>
+      <a href="https://developers.google.com/identity/gsi/web" target="_blank" rel="noreferrer noopener">
+        Google Identity Services
+      </a>
+    </footer>
+  </div>
+
+  
