@@ -383,3 +383,12 @@
     .logo { width: 52px; height: 52px; border-radius: 15px; font-size: 18px; }
     .card { padding: 18px; }
   }
+
+#gsi-button .google-button:hover {
+  outline: none !important;
+}
+
+#gsi-button .background_button,
+#gsi-button .filled_black.google-button:hover {
+  background-image: none !important;
+}
